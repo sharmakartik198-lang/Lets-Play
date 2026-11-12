@@ -1,0 +1,75 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Love Quest ❤️</title><style>html,body{margin:0;height:100%;background:#20152f;color:white;font-family:system-ui,sans-serif;overflow:hidden}#game{display:block;width:100vw;height:100vh;image-rendering:pixelated}#hud{position:fixed;top:14px;left:16px;font-weight:800;text-shadow:2px 2px #522}#help{position:fixed;top:14px;right:14px;font-size:13px;background:#301e49b8;padding:8px;border-radius:10px}#touch{position:fixed;bottom:15px;left:15px;right:15px;display:flex;justify-content:space-between;pointer-events:none}button{pointer-events:auto;background:#ff5d9c;border:3px solid #fff;border-radius:16px;color:white;font-size:23px;font-weight:900;padding:14px 21px;touch-action:none}#end{display:none;position:fixed;inset:0;background:#281537e8;align-items:center;justify-content:center;flex-direction:column;text-align:center;padding:20px}#end h1{font-size:clamp(36px,8vw,90px);margin:12px;color:#ff8fbd;text-shadow:4px 4px #81265c}#end p{font-size:clamp(18px,3vw,28px)}#end button{margin-top:22px}@media(min-width:800px){#touch{opacity:.45}}#loveNote{position:fixed;left:50%;top:17%;transform:translate(-50%,-15px) scale(.96);width:min(86vw,510px);padding:18px 25px;border:2px solid #fff8;border-radius:24px;background:linear-gradient(125deg,#a93480ee,#e65c9aee);box-shadow:0 12px 45px #4b174c80;text-align:center;font-size:clamp(17px,2.8vw,25px);font-weight:750;line-height:1.35;opacity:0;transition:opacity .45s,transform .45s;pointer-events:none;z-index:5}#loveNote.show{opacity:1;transform:translate(-50%,0) scale(1)}#end{z-index:10;background:radial-gradient(circle at center,#75315bdc,#25132cf5);overflow:hidden}#finalCanvas{position:absolute;inset:0;width:100%;height:100%;pointer-events:none}#finalContent{position:relative;z-index:2;opacity:0;transform:translateY(20px);transition:opacity 1.4s,transform 1.4s}#end.reveal #finalContent{opacity:1;transform:translateY(0)}#end h1{animation:pulse 2s ease-in-out infinite}@keyframes pulse{50%{transform:scale(1.06)}}#end .extra{font-size:clamp(16px,2.3vw,23px);max-width:680px;line-height:1.55;color:#ffe0f0}@media(max-width:600px){#loveNote{top:13%}} #end{overflow-y:auto;justify-content:flex-start;padding:28px 14px;box-sizing:border-box}#finalContent{width:min(100%,700px);margin:auto; padding:25px 0 45px}#end h1{font-size:clamp(32px,7vw,66px)}.finalHeading{font-size:42px}.finalSubtitle{font-size:clamp(16px,2.6vw,23px)!important;margin:4px 0 20px}#letter{background:linear-gradient(145deg,#fff8ee,#ffe8f2);color:#643354;border:4px solid #ffd1e2;border-radius:20px;padding:clamp(17px,4vw,32px);box-shadow:0 14px 55px #180b2059;text-align:left;max-width:620px;margin:0 auto}#letter h2{text-align:center;margin:0 0 15px;font-size:clamp(20px,4vw,29px)}#typedLetter{font-family:Georgia,serif;font-size:clamp(15px,2.4vw,19px)!important;line-height:1.65;white-space:pre-wrap;min-height:100px;margin:0!important}#letterCursor{color:#e84e8c;animation:pulse 1s infinite}#end button{font-size:18px}</style></head><body><canvas id="game"></canvas><div id="hud">❤️ <span id="count">0</span> / 8</div><div id="help">← → / A D move · Space / ↑ jump</div><div id="touch"><div><button id="left">◀</button> <button id="right">▶</button></div><button id="jump">⬆ Jump</button></div><div id="loveNote" aria-live="polite"></div><div id="end"><canvas id="finalCanvas"></canvas><div id="finalContent"><div class="finalHeading">💖🏰💖</div><h1>I LOVE YOU! ❤️</h1><p class="finalSubtitle">Every adventure is better with you.</p><section id="letter" aria-label="A love letter"><h2>💌 To My Favorite Person</h2><p id="typedLetter" aria-live="off"></p><span id="letterCursor">♥</span></section><button onclick="location.reload()">Play again ↻</button></div></div><script>
+const c=document.getElementById('game'),ctx=c.getContext('2d');let W,H,scale,cam=0;function resize(){W=c.width=innerWidth;H=c.height=innerHeight;scale=Math.max(.8,Math.min(1.5,H/620))}addEventListener('resize',resize);resize();const world=3800,ground=()=>H-95*scale;let player={x:70,y:0,vx:0,vy:0,w:31,h:40,on:false},keys={},collected=0,won=false;let hearts=[300,570,830,1120,1500,1890,2330,2880].map((x,i)=>({x,y:-110-(i%3)*40,got:false}));const loveNotes=[
+"Every little heart reminds me of you. 💗",
+"You make my ordinary days feel magical. ✨",
+"If kisses were coins, you'd be a billionaire. 😘",
+"Your smile is my favorite power-up. 🌸",
+"I would choose you in every universe. 🌙",
+"You're my cutest adventure and my happiest ending. 💕",
+"Even the stars can't compete with your sparkle. ⭐",
+"One more heart? Mine has always been yours. 💘"
+];
+const milestones=[
+{x:180,msg:"Psst... someone thinks you're ridiculously adorable! 🥰"},
+{x:700,msg:"No obstacle could ever keep me from you. 💞"},
+{x:1350,msg:"Plot twist: you're the best thing that ever happened to me. 💖"},
+{x:2050,msg:"Every step with you feels like a little fairytale. 🏰"},
+{x:2750,msg:"I'd cross a thousand worlds just to hold your hand. 🤝💕"},
+{x:3290,msg:"Almost there, my love... a surprise is waiting! 🎁"}
+];
+let noteTimeout,shownMilestones=new Set();
+function showLoveNote(message){const el=document.getElementById('loveNote');el.textContent=message;el.classList.remove('show');void el.offsetWidth;el.classList.add('show');clearTimeout(noteTimeout);noteTimeout=setTimeout(()=>el.classList.remove('show'),3600)}
+let platforms=[{x:390,w:160,h:75},{x:780,w:160,h:115},{x:1220,w:190,h:85},{x:1660,w:180,h:130},{x:2110,w:180,h:90},{x:2550,w:180,h:130},{x:3010,w:190,h:90}];let hazards=[650,1020,1450,1970,2410,2790].map(x=>({x,w:38}));const hold=(id,key)=>{let b=document.getElementById(id);b.addEventListener('pointerdown',e=>{e.preventDefault();keys[key]=true;b.setPointerCapture(e.pointerId)});for(let event of ['pointerup','pointercancel','lostpointercapture'])b.addEventListener(event,()=>keys[key]=false)};hold('left','ArrowLeft');hold('right','ArrowRight');hold('jump','Space');addEventListener('keydown',e=>{if(['Space','ArrowUp','ArrowLeft','ArrowRight'].includes(e.code))e.preventDefault();keys[e.code]=true});addEventListener('keyup',e=>keys[e.code]=false);player.y=ground()-player.h*scale;
+function drawHeart(x,y,s=1){ctx.save();ctx.translate(x,y);ctx.scale(s,s);ctx.fillStyle='#ff327d';ctx.beginPath();ctx.moveTo(0,9);ctx.bezierCurveTo(-32,-10,-13,-28,0,-12);ctx.bezierCurveTo(13,-28,32,-10,0,9);ctx.fill();ctx.restore()}
+function rect(x,y,w,h,color){ctx.fillStyle=color;ctx.fillRect(x,y,w,h)}function update(){if(won)return;let speed=5*scale;player.vx=(keys.ArrowRight||keys.KeyD?speed:0)-(keys.ArrowLeft||keys.KeyA?speed:0);if((keys.Space||keys.ArrowUp||keys.KeyW)&&player.on){player.vy=-14*scale;player.on=false}let prevBottom=player.y+player.h*scale;player.vy+=.65*scale;player.x=Math.max(0,Math.min(world,player.x+player.vx/scale));player.y+=player.vy;let floor=ground();player.on=false;if(player.y+player.h*scale>=floor){player.y=floor-player.h*scale;player.vy=0;player.on=true}for(let p of platforms){let px=p.x*scale,py=floor-p.h*scale;if(player.x*scale+player.w*scale>px&&player.x*scale<px+p.w*scale&&prevBottom<=py+10*scale&&player.y+player.h*scale>=py&&player.vy>=0){player.y=py-player.h*scale;player.vy=0;player.on=true}}cam=Math.max(0,Math.min(world*scale-W+100,player.x*scale-W*.3));for(let h of hearts){let hy=floor+h.y*scale;if(!h.got&&Math.abs(player.x-h.x)<35&&Math.abs(player.y-hy)<50*scale){h.got=true;collected++;document.getElementById('count').textContent=collected;showLoveNote(loveNotes[collected-1])}}for(let z of hazards){if(Math.abs(player.x-z.x)<29&&player.y+player.h*scale>floor-28*scale){player.x=Math.max(0,player.x-160);player.y=floor-220*scale;player.vy=-4*scale}}for(let i=0;i<milestones.length;i++){if(player.x>=milestones[i].x&&!shownMilestones.has(i)){shownMilestones.add(i);showLoveNote(milestones[i].msg)}}if(player.x>3510){won=true;startFinale()}}
+function startFinale(){
+ const end=document.getElementById('end');end.style.display='flex';
+ const fc=document.getElementById('finalCanvas'),f=fc.getContext('2d');
+ let start=performance.now(),particles=[];
+ function person(x,y,pink,flip,arms){
+  f.save();f.translate(x,y);f.scale(flip,1);
+  f.fillStyle='#382542';f.fillRect(-13,27,11,18);f.fillRect(3,27,11,18);
+  f.fillStyle=pink?'#ff6b9e':'#678fe4';f.fillRect(-17,-9,34,38);
+  f.fillStyle='#ffcfab';f.fillRect(-14,-39,28,30);
+  f.fillStyle=pink?'#7d3a55':'#493147';f.fillRect(-17,-43,34,12);f.fillRect(-17,-35,6,17);
+  f.fillStyle='#33223c';f.fillRect(4,-26,3,4);
+  f.fillStyle='#ffcfab';
+  if(arms){f.save();f.translate(-15,-2);f.rotate(-.85);f.fillRect(-5,0,10,35);f.restore();}
+  else f.fillRect(-22,-5,9,30);
+  f.restore();
+ }
+ function frame(now){
+  let t=(now-start)/1000;fc.width=innerWidth*devicePixelRatio;fc.height=innerHeight*devicePixelRatio;
+  f.setTransform(devicePixelRatio,0,0,devicePixelRatio,0,0);
+  let w=innerWidth,h=innerHeight,unit=Math.min(w/430,h/520,1.4);
+  f.save();f.translate(w/2,h*.36);f.scale(unit*2.5,unit*2.5);
+  const distance=Math.max(20,110-t*48);
+  person(-distance,0,true,1,t>1.6);person(distance,0,false,-1,t>1.6);
+  if(t>1.7){f.font='28px system-ui';f.textAlign='center';f.fillText('💗',0,-65);}
+  f.restore();
+  if(t>1.8 && Math.random()<.65){let cx=Math.random()*w,cy=Math.random()*h*.72;for(let j=0;j<18;j++){let a=j*Math.PI/9;particles.push({x:cx,y:cy,vx:Math.cos(a)*(1+Math.random()*3),vy:Math.sin(a)*(1+Math.random()*3),life:70,color:['#ff80ae','#ffe18d','#ffffff','#d2a0ff'][j%4]})}}
+  particles=particles.filter(p=>p.life-->0);
+  for(let p of particles){p.x+=p.vx;p.y+=p.vy;p.vy+=.015;f.globalAlpha=Math.min(1,p.life/28);f.fillStyle=p.color;f.fillRect(p.x,p.y,4,4)}f.globalAlpha=1;
+  if(t<2.5){f.fillStyle='#fff';f.font='bold 24px system-ui';f.textAlign='center';f.fillText(t<1.7?'Someone special is waiting for you...':'A hug, just for you! 💕',w/2,h*.73)}
+  requestAnimationFrame(frame);
+ }
+ requestAnimationFrame(frame);
+ setTimeout(()=>{end.classList.add('reveal');typeLoveLetter()},2800);
+}
+const letterText = `Hey, my love,
+
+I made this little adventure for you because sometimes just saying “I love you” doesn't feel like enough.
+
+If life were a video game, you'd be my favorite level, my greatest adventure, and the one person I'd choose to play alongside forever.
+
+I know life won't always be easy. There will be difficult levels, unexpected obstacles, and days when things don't go according to plan. But there's one thing I want you to remember: I'll always want you on my team.
+
+You're my favorite notification, my happiest thought, my cutest distraction, and the reason behind so many of my smiles.
+
+And if I had to start this whole game called life all over again, I'd still find my way to you.
+
+I love you. In every level, every lifetime, and every universe. ❤️
+
+Forever your Player 2. 🎮💕`;
+function typeLoveLetter(){const el=document.getElementById('typedLetter');let i=0;function step(){i=Math.min(i+3,letterText.length);el.textContent=letterText.slice(0,i);if(i<letterText.length)setTimeout(step,22);else document.getElementById('letterCursor').style.display='none'}step()}
+function draw(){let floor=ground();let sky=ctx.createLinearGradient(0,0,0,H);sky.addColorStop(0,'#7d65c9');sky.addColorStop(1,'#ffc2d8');rect(0,0,W,H,sky);ctx.fillStyle='#ffe2a4';ctx.beginPath();ctx.arc(W*.79,H*.19,55*scale,0,7);ctx.fill();for(let i=0;i<18;i++){let x=((i*270*scale-cam*.18)%(W+300)+W+300)%(W+300)-100,y=70+(i%4)*55*scale;ctx.fillStyle='#ffffff99';ctx.beginPath();ctx.ellipse(x,y,65*scale,19*scale,0,0,7);ctx.fill()}for(let i=0;i<35;i++){let x=i*155*scale-cam*.4;ctx.fillStyle=i%2?'#ac87bd':'#b999d0';ctx.beginPath();ctx.arc(x,floor+10*scale,125*scale,Math.PI,0);ctx.fill()}rect(0,floor,W,H-floor,'#75c97e');rect(0,floor,W,15*scale,'#a4ed8d');for(let i=0;i<world/30;i++){let x=i*30*scale-cam;if(x>-30&&x<W){rect(x,floor+30*scale,8*scale,8*scale,'#5ba86b')}}for(let p of platforms){let x=p.x*scale-cam,y=floor-p.h*scale;rect(x,y,p.w*scale,20*scale,'#78bd75');rect(x,y+17*scale,p.w*scale,15*scale,'#9b634e');for(let k=0;k<p.w;k+=25)rect(x+k*scale,y+20*scale,3*scale,10*scale,'#724639')}for(let z of hazards){let x=z.x*scale-cam;ctx.fillStyle='#ff5777';ctx.beginPath();ctx.moveTo(x,floor);ctx.lineTo(x+19*scale,floor-30*scale);ctx.lineTo(x+38*scale,floor);ctx.fill()}for(let h of hearts)if(!h.got)drawHeart(h.x*scale-cam,floor+h.y*scale,1.2*scale);let castleX=3510*scale-cam;rect(castleX,floor-185*scale,170*scale,185*scale,'#e7a2c8');rect(castleX+50*scale,floor-95*scale,65*scale,95*scale,'#8c4d9a');for(let k=0;k<4;k++)rect(castleX+k*50*scale,floor-210*scale,30*scale,40*scale,'#e7a2c8');ctx.font=`${23*scale}px system-ui`;ctx.fillText('💕 FINISH 💕',castleX-10*scale,floor-225*scale);let x=player.x*scale-cam,y=player.y;rect(x+5*scale,y+13*scale,23*scale,25*scale,'#ff5a92');rect(x+5*scale,y+2*scale,23*scale,18*scale,'#ffcfab');rect(x,y,33*scale,9*scale,'#df3277');rect(x+22*scale,y+13*scale,5*scale,5*scale,'#4b244d');rect(x+3*scale,y+37*scale,13*scale,5*scale,'#643b7b');rect(x+20*scale,y+37*scale,13*scale,5*scale,'#643b7b');requestAnimationFrame(loop)}function loop(){update();draw()}loop();</script></body></html>
